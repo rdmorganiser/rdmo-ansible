@@ -1,0 +1,11 @@
+---
+local_py_template: "{{ rdmo_conf_overrides.global.local_py_template | default(True) }}"
+rdmo_postgres_password: "{{ rdmo_conf_overrides.global.rdmo_postgres_password }}"
+rdmo_user: "{{ rdmo_conf_overrides.global.rdmo_user }}"
+rdmo_secret_key: "{{ rdmo_conf_overrides.global.rdmo_secret_key }}"
+rdmo_superuser_email: "{{ rdmo_conf_overrides.global.rdmo_superuser_email }}"
+installation_method: "{{ rdmo_conf_overrides.global.installation_method }}"
+pg_backup_path: "{{ rdmo_conf_overrides.global.pg_backup_path }}"
+overwrite_nginx_conf: "{{ rdmo_conf_overrides.global.overwrite_nginx_conf }}"
+run_dehydrated: "{{ rdmo_conf_overrides.global.run_dehydrated }}"
+testsuite_deps: "{{ rdmo_conf_overrides.global.testsuite_deps }}"

@@ -1,0 +1,13 @@
+---
+- include_tasks: create-user.yml
+- include_tasks: install-deps.yml
+- include_tasks: pull-it.yml
+- include_tasks: create-env.yml
+- include_tasks: configuration.yml
+- include_tasks: configure-rdmo.yml
+- include_tasks: start-rdmo.yml
+
+- name: Install testsuite dependencies
+  include_tasks: testsuite_deps.yml
+  when: testsuite_deps == True
+

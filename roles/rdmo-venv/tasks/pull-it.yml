@@ -1,0 +1,19 @@
+---
+- name: Clone rdmo-app
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  git:
+    repo: "{{ rdmo_repo | default('https://github.com/rdmorganiser/rdmo-app.git') }}"
+    dest: "{{ rdmo_home }}/rdmo-app"
+    version: "{{ rdmo_repo_version | default('master') }}"
+  no_log: True
+
+- name: Clone rdmo-catalogs
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  git:
+    repo: "{{ catalog_repo | default('https://github.com/rdmorganiser/rdmo-catalog.git') }}"
+    dest: "{{ rdmo_home }}/rdmo-catalogs"
+    version: "{{ catalog_repo_version | default('master') }}"
+  no_log: True
+

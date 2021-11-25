@@ -1,0 +1,9 @@
+[Unit]
+Description=Check and renew ACME TLS certificates
+
+[Service]
+Type=oneshot
+User=dehydrated
+Group=dehydrated
+ExecStart=/usr/bin/dehydrated --cron --config "%f"
+

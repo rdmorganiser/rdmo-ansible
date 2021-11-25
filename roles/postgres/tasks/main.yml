@@ -1,0 +1,10 @@
+---
+- include_tasks: pginstall.yml
+  when: rdmo_conf_overrides.global.installation_method == "install"
+
+- include_tasks: pgremote.yml
+  when: rdmo_conf_overrides.global.installation_method == "remote"
+
+- include_tasks: pgremote_nodump.yml
+  when: rdmo_conf_overrides.global.installation_method == "nodump"
+

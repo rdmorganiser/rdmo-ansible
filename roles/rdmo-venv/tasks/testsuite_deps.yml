@@ -1,0 +1,76 @@
+---
+- name: Install Selenium
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  pip:
+    name: "selenium"
+    state: present
+    virtualenv: "{{ rdmo_env_dir }}"
+    virtualenv_python: python3
+
+- name: Install IPython
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  pip:
+    name: "ipython"
+    state: present
+    virtualenv: "{{ rdmo_env_dir }}"
+    virtualenv_python: python3
+
+- name: Install Chromium and Chromium drivers
+  package:
+    name: ['chromium-browser', 'chromium-chromedriver']
+    state: latest
+
+- name: Install Firefox and Firefox drivers
+  package:
+    name: ['firefox', 'firefoxdriver']
+    state: latest
+
+- name: Install geckodrivers - Download
+  get_url:
+    url: https://github.com/mozilla/geckodriver/releases/download/v0.24.0/geckodriver-v0.24.0-linux64.tar.gz
+    dest: /root/
+          
+- name: Install geckodrivers - Extract
+  unarchive:
+    remote_src: yes
+    src: /root/geckodriver-v0.24.0-linux64.tar.gz
+    dest: /root/
+
+- name: Install geckodrivers - chmod
+  file:
+    path: /root/geckodriver
+    state: file
+    owner: root
+    group: root
+    mode: u+x
+
+- name: Install geckodrivers - Move
+  shell: mv /root/geckodriver /usr/local/bin/
+
+- name: Clean up
+  file:
+    path: /root/geckodriver-v0.24.0-linux64.tar.gz
+    state: absent
+
+- name: Check if testuser exists already
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  command: echo "from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.filter(username='testuser').count()==0)" | "{{ rdmo_env_dir }}/bin/python" "{{ rdmo_app_dir }}/manage.py" shell
+  ignore_errors: True
+  register: testuser_missing
+
+- name: manage.py user_creation
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  django_manage:
+    command: "runscript user_creation"
+    app_path: "{{ rdmo_app_dir }}"
+    virtualenv: "{{ rdmo_env_dir }}"
+  when: testuser_missing | bool
+
+- name: Import RDMO catalogs
+  include_tasks: import-catalogs.yml
+  when: catalog_import == True
+

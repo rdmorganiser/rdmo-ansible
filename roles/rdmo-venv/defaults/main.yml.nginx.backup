@@ -1,0 +1,12 @@
+---
+nginx_pkgs:
+  - nginx
+
+nginx_load_default_vars: true
+nginx_conf_dir: /etc/nginx
+
+nginx_worker_processes: auto
+nginx_log_dir: /var/log/nginx
+
+nginx_start_service: true
+nginx_start_at_boot: true

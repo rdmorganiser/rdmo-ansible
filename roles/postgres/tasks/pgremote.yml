@@ -1,0 +1,36 @@
+---
+- name: Make sure postgresql-client and psycopg2 are installed
+  package:
+    name: ['postgresql-client', 'python3-psycopg2']
+    state: latest
+
+- name: Create RDMO user
+  postgresql_user:
+    login_host: "{{ pgserver }}"
+    login_password: "{{ pgpassword }}"
+    name: "{{ rdmo_postgres_user }}"
+    password: "{{ rdmo_postgres_password }}"
+    encrypted: yes
+
+- name: Create RDMO database
+  postgresql_db:
+    login_host: "{{ pgserver }}"
+    login_password: "{{ pgpassword }}"
+    name: "{{ rdmo_postgres_user }}"
+    state: present
+    owner: "{{ rdmo_postgres_user }}"
+
+- name: Copy dump and restore on postgres server
+  copy:
+    src: rdmo-backup
+    dest: "{{ pg_backup_path }}"
+
+- name: Restore RDMO database
+  postgresql_db:
+    login_host: "{{ pgserver }}"
+    login_user: "{{ rdmo_postgres_user }}"
+    login_password: "{{ rdmo_postgres_password }}"
+    name: "{{ rdmo_postgres_user }}"
+    state: restore
+    target: "{{ pg_backup_path }}"
+

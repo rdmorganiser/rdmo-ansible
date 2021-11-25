@@ -1,0 +1,17 @@
+---
+- name: Create POSIX user for RDMO instance
+  user:
+    name: "{{ rdmo_user }}"
+    password: '*'
+    home: "{{ rdmo_home }}"
+    shell: '/bin/bash'
+
+- name: Ensure ~/.pgpass contains PostgreSQL credentials
+  ansible.builtin.lineinfile:
+    path: "{{ rdmo_home }}/.pgpass"
+    create: yes
+    regexp: "^{{ postgres_server }}:{{ postgres_port }}:{{ rdmo_user }}:{{ rdmo_user }}:.+$"
+    line: "{{ postgres_server }}:{{ postgres_port }}:{{ rdmo_user }}:{{ rdmo_user }}:{{ rdmo_postgres_password }}"
+    owner: "{{ rdmo_user }}"
+    group: "{{ rdmo_user }}"
+    mode: '0600'

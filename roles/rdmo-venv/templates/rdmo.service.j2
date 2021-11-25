@@ -1,0 +1,12 @@
+#{{ ansible_managed }}
+[Unit]
+Description=RDMO Gunicorn
+[Service]
+WorkingDirectory={{ rdmo_home }}/rdmo-app
+User={{ rdmo_user }}
+ExecStart={{ rdmo_env_dir }}/bin/gunicorn --workers 2 --bind unix:{{ rdmo_home }}/rdmo.sock config.wsgi:application
+UMask=0002
+Restart=always
+RestartSec=3
+[Install]
+WantedBy=default.target

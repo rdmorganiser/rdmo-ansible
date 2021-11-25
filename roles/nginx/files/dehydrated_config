@@ -1,0 +1,6 @@
+BASEDIR="/var/lib/dehydrated"
+WELLKNOWN="${BASEDIR}/acme-challenges"
+DOMAINS_TXT="/etc/dehydrated/domains.txt"
+CA="https://acme-staging-v02.api.letsencrypt.org/directory"
+KEY_ALGO="secp384r1"
+OCSP_FETCH="yes"

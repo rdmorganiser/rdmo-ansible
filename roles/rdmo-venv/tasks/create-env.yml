@@ -1,0 +1,54 @@
+---
+- name: Install base requirements
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  pip:
+    requirements: "{{ rdmo_home }}/rdmo-app/requirements/base.txt"
+    state: present
+    virtualenv: "{{ rdmo_env_dir }}"
+    virtualenv_python: python3
+  
+- name: Install djangorestframework
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  pip:
+    name: "djangorestframework"
+    state: present
+    virtualenv: "{{ rdmo_env_dir }}"
+    virtualenv_python: python3
+
+- name: Install postgres requirements
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  pip:
+    requirements: "{{ rdmo_home }}/rdmo-app/requirements/postgres.txt"
+    state: present
+    virtualenv: "{{ rdmo_env_dir }}"
+    virtualenv_python: python3
+
+- name: Install psycopg2
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  pip:
+    name: psycopg2
+    virtualenv: "{{ rdmo_env_dir }}"
+    virtualenv_python: python3
+
+- name: Install gunicorn requirements
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  pip:
+    requirements: "{{ rdmo_home }}/rdmo-app/requirements/gunicorn.txt"
+    state: present
+    virtualenv: "{{ rdmo_env_dir }}"
+    virtualenv_python: python3
+      
+- name: Install memcached requirements
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  pip:
+    requirements: "{{ rdmo_home }}/rdmo-app/requirements/memcached.txt"
+    state: present
+    virtualenv: "{{ rdmo_env_dir }}"
+    virtualenv_python: python3
+

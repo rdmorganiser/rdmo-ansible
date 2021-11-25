@@ -1,0 +1,54 @@
+---
+# Create or copy theme
+- name: Create empty theme dir
+  file:
+    path: "{{ rdmo_home }}/{{ item }}"
+    owner: "{{ rdmo_user }}"
+    group: 'www-data'
+    state: directory
+    mode: '0750'
+  with_items:
+     - "rdmo-app/theme/static"
+     - "rdmo-app/theme/templates"
+     - "rdmo-app/vendor"
+     - "rdmo-app/log"
+  when: theme is not defined
+
+- name: Pull theme dir
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  git:
+    repo: "{{ theme }}"
+    dest: "{{ rdmo_app_dir }}/theme"
+  when: theme is defined
+
+- name: manage.py migrate, setup_groups, download_vendor_files, collectstatic, deploy
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  django_manage:
+    command: "{{ item }}"
+    app_path: "{{ rdmo_app_dir }}"
+    virtualenv: "{{ rdmo_env_dir }}"
+  with_items:
+     - "migrate --no-input"
+     - "setup_groups"
+     - "download_vendor_files"
+     - "collectstatic --no-input"
+     - "deploy"
+
+- name: Check if super user exists already
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  shell: echo "from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.filter(username='admin').count()==0)" | "{{ rdmo_env_dir }}/bin/python" "{{ rdmo_app_dir }}/manage.py" shell
+  register: superuser_missing
+
+- name: manage.py createsuperuser
+  become: yes
+  become_user: "{{ rdmo_user }}"
+  django_manage:
+    command: "createsuperuser --noinput --username=admin --email={{ rdmo_superuser_email }}"
+    app_path: "{{ rdmo_app_dir }}"
+    virtualenv: "{{ rdmo_env_dir }}"
+  ignore_errors: True
+  when: superuser_missing | bool
+

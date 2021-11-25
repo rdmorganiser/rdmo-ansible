@@ -1,0 +1,4 @@
+---
+overwrite_nginx_conf: "{{ rdmo_conf_overrides.global.overwrite_nginx_conf }}"
+run_dehydrated: "{{ rdmo_conf_overrides.global.run_dehydrated }}"
+

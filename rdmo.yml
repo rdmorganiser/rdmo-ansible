@@ -1,0 +1,17 @@
+---
+- hosts: rdmohost
+  remote_user: root
+
+  roles:
+
+  - role: ansible-prerequisites
+    ignore_errors: no
+
+  - role: postgres
+    ignore_errors: no
+
+  - role: nginx
+    ignore_errors: no
+
+  - role: rdmo-venv
+

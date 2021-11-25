@@ -1,0 +1,48 @@
+rdmo_conf_overrides:
+  global:
+     
+# RDMO installation specific 
+
+     catalog_import:
+     local_py_template:
+     rdmo_postgres_password:
+     rdmo_user:
+     #rdmo_secret_key: # Not needed
+     rdmo_hostnames: # The first list entry is the canonical hostname to which all other hostnames will redirect
+       - "rdmo.example.net"
+       - "www.rdmo.example.net"
+     rdmo_superuser_email:
+     #rdmo_mail_server: "localhost"
+     #rdmo_mail_port: 587
+     #rdmo_mail_disable_ssl: True #fixme, see https://docs.djangoproject.com/en/2.2/ref/settings/#email-use-ssl
+     #rdmo_mail_disable_tls: False #fixme, see https://docs.djangoproject.com/en/2.2/ref/settings/#email-use-tls
+     #rdmo_mail_user: "changeme_email_username"
+     #rdmo_mail_pass: "changeme_email_password"
+     #rdmo_mail_address: "changeme_email@localhost"
+     installation_method:
+     pg_backup_path:
+     overwrite_nginx_conf: # This needs to be set to "True", *but* you need to manually backup your existing nginx config beforehand.
+     run_dehydrated: False
+     testsuite_deps: False
+
+# PostgreSQL remote server variables
+
+     # postgres_server:
+     # postgres_port:
+     # postgres_password:
+     # postgres_disable_tls: True
+
+# Repositories (Uncomment to use custom URLs. Default repos defined in roles/rdmo-venv/tasks/pull-it.yml. Only HTTPS URLs are supported.)
+
+     # RDMO custom repo (rdmo_repo_url = HTTPS clone URL after "https://")
+     # rdmo_repo_url:
+     # rdmo_repo_user:
+     # rdmo_repo_pass:
+     # rdmo_repo_version: # This variable is optional and is only required to clone a specific branch
+
+     # Catalog custom repo (catalog_repo_url = HTTPS clone URL after "https://")
+     # catalog_repo_url:
+     # catalog_repo_user:
+     # catalog_repo_pass:
+     # catalog_repo_version: # This variable is optional and is only required to clone a specific branch
+

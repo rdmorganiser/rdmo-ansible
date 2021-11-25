@@ -1,0 +1,5 @@
+---
+- name: Install ansible prerequisites
+  package:
+    name: ["python3", "virtualenv", "python3-virtualenv", "python3-psycopg2"]
+    state: latest

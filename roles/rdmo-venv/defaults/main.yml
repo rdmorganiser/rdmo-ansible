@@ -1,0 +1,41 @@
+---
+catalog_import: "{{ rdmo_conf_overrides.global.catalog_import | default(True) }}"
+rdmo_user: "{{ rdmo_conf_overrides.global.rdmo_user }}"
+rdmo_hostnames: "{{ rdmo_conf_overrides.global.rdmo_hostnames }}"
+rdmo_canonical_hostname: "{{ rdmo_conf_overrides.global.rdmo_hostnames | first }}"
+rdmo_alternative_hostnames: "{{ ((rdmo_conf_overrides.global.rdmo_hostnames | count) > 1) | ternary(rdmo_conf_overrides.global.rdmo_hostnames[1:], []) }}"
+rdmo_home: "/srv/{{ rdmo_user }}"
+rdmo_app_dir: "{{ rdmo_home }}/rdmo-app"
+rdmo_env_dir: "{{ rdmo_app_dir }}/env"
+rdmo_conf_dir: "{{ rdmo_home }}/rdmo-app/config/settings/"
+rdmo_secret_key: "{{ rdmo_conf_overrides.global.rdmo_secret_key | default(lookup('password', '/dev/null length=64')) }}"
+rdmo_mail_server: "{{ rdmo_conf_overrides.global.rdmo_mail_server | default('localhost') }}"
+rdmo_mail_port: "{{ rdmo_conf_overrides.global.rdmo_mail_port | default(none) }}"
+rdmo_mail_disable_ssl: "{{ rdmo_conf_overrides.global.rdmo_mail_disable_ssl | default(rdmo_mail_server == 'localhost' | ternary(False, True)) }}" #fixme
+rdmo_mail_disable_tls: "{{ rdmo_conf_overrides.global.rdmo_mail_disable_tls | default(True) }}" #fixme
+rdmo_mail_user: "{{ rdmo_conf_overrides.global.rdmo_mail_user | default(none) }}"
+rdmo_mail_pass: "{{ rdmo_conf_overrides.global.rdmo_mail_pass | default(none) }}"
+rdmo_mail_address: "{{ rdmo_conf_overrides.global.rdmo_mail_address | default(rdmo_user + '@' + rdmo_canonical_hostname) }}"
+#rdmo_postgres_password: "{{ lookup('password', 'credentials/' + client + '/' + tier + '/' + role + '/postgres_password length=15') }}"
+#rdmo_postgres_password: "supersicherespasswort"
+rdmo_postgres_password: "{{ rdmo_conf_overrides.global.rdmo_postgres_password }}"
+postgres_server: "{{ rdmo_conf_overrides.global.postgres_server | default('localhost') }}"
+postgres_port: "{{ rdmo_conf_overrides.global.postgres_port | default(none) }}"
+postgres_disable_tls: "{{ rdmo_conf_overrides.global.postgres_disable_tls | default(True if postgres_server == 'localhost' else False) }}" #fixme
+#postgres_disable_tls: "{{ rdmo_conf_overrides.global.postgres_disable_tls | default(True) }}" #fixme
+testsuite_deps: "{{ rdmo_conf_overrides.global.testsuite_deps }}"
+openssl_subject_alt_names: "{{ ['DNS:'] | product(rdmo_hostnames) | map('join') | list }}"
+
+# Repositories (Uncomment to use the custom URLs defined in group_vars/all.yml)
+
+# rdmo_repo: "https://{{ rdmo_conf_overrides.global.rdmo_repo_user }}:{{ rdmo_conf_overrides.global.rdmo_repo_pass }}@{{ rdmo_conf_overrides.global.rdmo_repo_url }}"
+# rdmo_repo_version: "{{ rdmo_conf_overrides.global.rdmo_repo_version }}"
+
+# Public Repo
+# catalog_repo: "https://{{ rdmo_conf_overrides.global.catalog_repo_url }}"
+
+# Private Repo
+# catalog_repo: "https://{{ rdmo_conf_overrides.global.catalog_repo_user }}:{{ rdmo_conf_overrides.global.catalog_repo_pass }}@{{ rdmo_conf_overrides.global.catalog_repo_url }}"
+
+# catalog_repo_version: "{{ rdmo_conf_overrides.global.catalog_repo_version }}"
+

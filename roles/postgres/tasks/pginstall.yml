@@ -1,0 +1,49 @@
+---
+- name: Install PostgreSQL
+  package:
+    name: ['postgresql']
+
+- name: Make sure postgresql-common and psycopg2 are installed
+  package:
+    name: ['postgresql-common', 'python3-psycopg2']
+    state: latest
+
+- name: Check if existing PostgreSQL password for RDMO user is available
+  stat:
+    path: "{{ rdmo_home }}/.pgpass"
+    follow: yes
+  register: pgpass_stat_result
+
+- name: Read (slurp) existing ~/.pgpass for RDMO user if available
+  slurp:
+    src: "{{ rdmo_home }}/.pgpass"
+  register: pgpass_content_b64encoded
+  when: (rdmo_postgres_password is not defined) and pgpass_stat_result.stat.exists and pgpass_stat_result.stat.isreg and  pgpass_stat_result.stat.readable
+
+- name: Parse RDMO PostgreSQL password from ~/.pgpass contents
+  set_fact:
+    #pgpass: "{{ pgpass_content_b64encoded.content | b64decode | regex_search('^({{ postgres_server }}):({{ postgres_port }}):({{ rdmo_postgres_user }}):({{ rdmo_postgres_user }}):(.*)$', '\\5') }}"
+    #pgpass: "{{ pgpass_content_b64encoded.content | b64decode | regex_search('^(localhost):():(rdmo):(rdmo):(.*)$', '\\5') }}"
+    rdmo_postgres_password: "{{ pgpass_content_b64encoded.content | b64decode | regex_search('^(' + postgres_server + '):(' + postgres_port + '):(' + rdmo_postgres_user + '):(' + rdmo_postgres_user + '):(.*)$' | string, '\\5') }}"
+  when: (rdmo_postgres_password is not defined) and (pgpass_content_b64encoded is defined)
+
+- name: "Debug: show postgres password"
+  debug:
+    msg: "Debug: rdmo postgres password: {{ rdmo_postgres_password }}"
+
+- name: Create RDMO user
+  become: yes
+  become_user: "postgres"
+  postgresql_user:
+    name: "{{ rdmo_postgres_user }}"
+    password: "{{ rdmo_postgres_password }}"
+    encrypted: yes
+
+- name: Create RDMO database
+  become: yes
+  become_user: "postgres"
+  postgresql_db:
+    name: "{{ rdmo_postgres_user }}"
+    state: present
+    owner: "{{ rdmo_postgres_user }}"
+

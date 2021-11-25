@@ -1,0 +1,7 @@
+---
+rdmo_postgres_password: "{{ rdmo_conf_overrides.global.rdmo_postgres_password }}" # Password for user creation
+rdmo_postgres_user: "{{ rdmo_conf_overrides.global.rdmo_user }}"
+pgpassword: "{{ rdmo_conf_overrides.global.postgres_password }}" # Password for db connection
+pgserver: "{{ rdmo_conf_overrides.global.postgres_server }}"
+pg_backup_path: "{{ rdmo_conf_overrides.global.pg_backup_path | default('/tmp/rdmo-backup') }}"
+

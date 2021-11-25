@@ -1,0 +1,15 @@
+---
+- name: "Check required variables"
+  assert:
+    that:
+      - '{{ item }} != ""'
+  with_items:
+    - local_py_template
+    - rdmo_postgres_password
+    - rdmo_user
+    - rdmo_superuser_email
+    - installation_method
+    - pg_backup_path
+    - overwrite_nginx_conf
+    - run_dehydrated
+    - testsuite_deps

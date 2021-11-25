@@ -1,0 +1,325 @@
+---
+- name: Make sure nginx-core and dehydrated are installed
+  package:
+    name: ['nginx-core', 'dehydrated']
+    state: latest
+
+- name: Copy dehydrated service and timer units to RDMO host
+  copy:
+    src: "{{ item }}"
+    dest: "/etc/systemd/system/{{ item }}"
+    owner: root
+    group: root
+    mode: '0644'
+  with_items:
+    - dehydrated@.service
+    - dehydrated@.timer
+
+- name: systemd daemon-reload
+  systemd:
+    daemon_reload: yes
+
+- name: Copy /etc/nginx/nginx.conf to RDMO host
+  copy:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: rdmo_conf_overrides.global.overwrite_nginx_conf == True
+
+- name: Make sure nginx configuration subdirectories exist
+  file:
+    path: "/etc/nginx/{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0755
+  with_items:
+    - sites-available
+    - sites-enabled
+    - snippets
+  when: rdmo_conf_overrides.global.overwrite_nginx_conf == True
+
+- name: Create "dehydrated" group
+  group:
+    name: dehydrated
+
+- name: Create "dehydrated" user
+  user:
+    name: dehydrated
+    group: dehydrated
+    password: '!'
+    home: /var/lib/dehydrated
+    shell: '/bin/bash'
+
+- name: Make sure /var/lib/dehydrated directory has the correct permissions
+  file:
+    path: "/var/lib/dehydrated"
+    state: directory
+    owner: "dehydrated"
+    mode: 0755
+
+- name: Make sure /var/lib/dehydrated/acme-challenges exists and is writable for the dehydrated user
+  file:
+    path: /var/lib/dehydrated/acme-challenges
+    state: directory
+    owner: dehydrated
+    group: root
+    mode: 0755
+
+- name: Copy /etc/nginx/snippets/acme-challenges.conf to RDMO host
+  copy:
+    src: nginx_acme-challenges.conf
+    dest: /etc/nginx/snippets/acme-challenges.conf
+    owner: root
+    group: root
+    mode: '0644'
+  when: rdmo_conf_overrides.global.overwrite_nginx_conf == True
+
+- name: Copy nginx vhost config for our RDMO instance
+  template:
+     src: nginx_rdmo.conf.j2
+     dest: "/etc/nginx/sites-available/{{ rdmo_user }}.conf"
+  when: rdmo_conf_overrides.global.overwrite_nginx_conf == True
+
+- name: Enable nginx vhost config for our RDMO instance
+  file:
+    src: "/etc/nginx/sites-available/{{ rdmo_user }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ rdmo_user }}.conf"
+    state: link
+  when: rdmo_conf_overrides.global.overwrite_nginx_conf == True
+
+- name: Recursively chown /etc/dehydrated to root user
+  file:
+    path: /etc/dehydrated
+    state: directory
+    owner: root
+    group: root
+    recurse: yes
+
+- name: Copy dehydrated config
+  copy:
+    src: dehydrated_config
+    dest: /etc/dehydrated/config
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Copy dehydrated hook.sh
+  copy:
+    src: dehydrated_hook.sh
+    dest: /etc/dehydrated/hook.sh
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Make sure dehydrated's domains.txt exists
+  file:
+    path: "/etc/dehydrated/domains.txt"
+    state: touch
+
+- name: Add the domains for our RDMO instance to dehydrated's domains.txt
+  lineinfile:
+    path: /etc/dehydrated/domains.txt
+    line: "{{ rdmo_hostnames | join(' ') }}"
+
+- name: Make sure dehydrated certificate directory for our RDMO domain exists
+  become_user: dehydrated
+  become: yes
+  file:
+    path: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}"
+    state: directory
+    mode: 0700
+
+- name: Initial check for existence of selfsigned TLS certificate private key for our RDMO instance
+  become_user: dehydrated
+  become: yes
+  community.crypto.openssl_privatekey_info:
+    check_consistency: yes
+    path: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/privkey.pem"
+  register: result_tls_privatekey
+  ignore_errors: yes
+
+- name: Initial check for existence of selfsigned TLS certificate for our RDMO instance
+  become_user: dehydrated
+  become: yes
+  community.crypto.x509_certificate_info:
+    path: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/fullchain.pem"
+  register: result_tls_certificate
+  ignore_errors: yes
+
+- name: Debug openssl_subject_alt_names before sorting
+  debug:
+          msg: "openssl_subject_alt_names: {{ openssl_subject_alt_names }}"
+- name: Sort entries of openssl_subject_alt_names for consistence with dehydrated behaviour
+  set_fact:
+    openssl_subject_alt_names: "{{ openssl_subject_alt_names if ((openssl_subject_alt_names is string) or ((openssl_subject_alt_names | type_debug == 'list') and (openssl_subject_alt_names | length < 2))) else ([openssl_subject_alt_names[0]] + (openssl_subject_alt_names[1:] | sort)) }}"
+    # radosgw_frontend_port: "{{ radosgw_civetweb_port if radosgw_frontend_type == 'civetweb' else '8080' }}"
+- name: Debug openssl_subject_alt_names after sorting
+  debug:
+          msg: "openssl_subject_alt_names: {{ openssl_subject_alt_names }}"
+
+- name: Check preexistence of selfsigned certificate and its private key
+  set_fact:
+    certificate_check: "{{ ((result_tls_privatekey.can_load_key == True) and (result_tls_privatekey.can_parse_key == True) and (result_tls_privatekey.key_is_consistent == True) and (result_tls_privatekey.public_key == result_tls_certificate.public_key) and (result_tls_certificate.subject_alt_name == openssl_subject_alt_names)) | bool }}" #fixme
+
+- name: Generate private key for self-signed certificate to allow nginx to start so we can complete the ACME HTTP-01 challenge
+  become_user: dehydrated
+  become: yes
+  community.crypto.openssl_privatekey:
+    mode: g-rwx,o-rwx
+    path: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/selfsigned_privkey.pem"
+    type: ECC
+    curve: secp384r1
+  when: certificate_check == False
+
+- name: Generate CSR for self-signed certificate to allow nginx to start so we can complete the ACME HTTP-01 challenge
+  become_user: dehydrated
+  become: yes
+  community.crypto.openssl_csr:
+    mode: g-rwx,o-rwx
+    privatekey_path: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/selfsigned_privkey.pem"
+    path:            "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/selfsigned_csr.pem"
+    digest: sha384
+    subject_alt_name: "{{ openssl_subject_alt_names }}"
+  when: certificate_check == False
+
+- name: Generate self-signed certificate to allow nginx to start so we can complete the ACME HTTP-01 challenge
+  become_user: dehydrated
+  become: yes
+  community.crypto.x509_certificate:
+    mode: g-rwx,o-rwx
+    privatekey_path: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/selfsigned_privkey.pem"
+    csr_path:        "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/selfsigned_csr.pem"
+    path:            "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/selfsigned_cert.pem"
+    provider: selfsigned
+    selfsigned_digest: sha384
+  when: certificate_check == False
+
+- name: Symlink fullchain.pem to selfsigned_cert.pem
+  become_user: dehydrated
+  become: yes
+  file:
+    src:  "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/selfsigned_cert.pem"
+    dest: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/fullchain.pem"
+    state: link
+  when: certificate_check == False
+
+- name: Symlink privkey.pem to selfsigned_privkey.pem
+  become_user: dehydrated
+  become: yes
+  file:
+    src:  "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/selfsigned_privkey.pem"
+    dest: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/privkey.pem"
+    state: link
+  when: certificate_check == False
+
+- name: Create empty selfsigned_ocsp.der
+  become_user: dehydrated
+  become: yes
+  file:
+    path: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/selfsigned_ocsp.der"
+    state: touch
+  when: certificate_check == False
+
+- name: Symlink ocsp.der to selfsigned_ocsp.der
+  become_user: dehydrated
+  become: yes
+  file:
+    src:  "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/selfsigned_ocsp.der"
+    dest: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/ocsp.der"
+    state: link
+  when: certificate_check == False
+
+- name: Check for existence of selfsigned TLS certificate private key for our RDMO instance
+  become_user: dehydrated
+  become: yes
+  community.crypto.openssl_privatekey_info:
+    check_consistency: yes
+    path: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/privkey.pem"
+  register: result_tls_privatekey
+  ignore_errors: yes
+
+- name: Check for existence of selfsigned TLS certificate for our RDMO instance
+  become_user: dehydrated
+  become: yes
+  community.crypto.x509_certificate_info:
+    path: "/var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/fullchain.pem"
+  register: result_tls_certificate
+  ignore_errors: yes
+
+- name: Debug openssl_subject_alt_names
+  debug:
+          msg: "openssl_subject_alt_names:               {{ openssl_subject_alt_names }}"
+#FIXME {
+#- name: Debug result_tls_certificate.subject_alt_name
+#  debug:
+#          msg: "result_tls_certificate.subject_alt_name: {{ result_tls_certificate.subject_alt_name }}"
+#} FIXME
+- name: Debug result_tls_privatekey.key_is_consistent
+  debug:
+          msg: "result_tls_privatekey.key_is_consistent: {{ ((result_tls_privatekey.key_is_consistent | bool) == True) }}"
+- name: Debug result_tls_privatekey.public_key
+  debug:
+          msg: "result_tls_privatekey.public_key: {{ (result_tls_privatekey.public_key == result_tls_certificate.public_key) }}"
+- name: Debug result_tls_certificate.subject_alt_name
+  debug:
+          msg: "result_tls_certificate.subject_alt_name: {{ ((result_tls_certificate.subject_alt_name == openssl_subject_alt_names) | bool) }}"
+- name: Debug certificate_check
+  debug:
+          msg: "certificate_check: {{ certificate_check }} "
+
+- name: Make sure nginx is started
+  systemd:
+    name: nginx
+    state: started
+
+- name: Reload nginx apply our configuration
+  systemd:
+    name: nginx
+    state: reloaded
+
+- name: Enable nginx systemd unit to start systemd automatically at boot
+  systemd:
+    name: nginx
+    enabled: yes
+
+- name: Check if dehydrated already has registered an ACME account
+  find:
+    paths: /var/lib/dehydrated/accounts
+    recurse: no
+    file_type: directory
+  register: dehydrated_accounts
+  when: rdmo_conf_overrides.global.run_dehydrated == True
+
+- name: Register an ACME account for dehydrated
+  become: yes
+  become_user: "dehydrated"
+  shell: /usr/bin/dehydrated --register --accept-terms
+  when: (rdmo_conf_overrides.global.run_dehydrated == True) and ((dehydrated_accounts.files | count) < 1)
+
+- name: Run dehydrated to get Let's Encrypt certificate
+  systemd:
+    name: dehydrated@etc-dehydrated-config.service
+    state: restarted
+  when: rdmo_conf_overrides.global.run_dehydrated == True
+
+- name: Run dehydrated again to make sure the OCSP file is fetched
+  systemd:
+    name: dehydrated@etc-dehydrated-config.service
+    state: restarted
+  when: rdmo_conf_overrides.global.run_dehydrated == True
+
+- name: Enable dehydrated timer for automatic OCSP and certificate renewal
+  systemd:
+    name: dehydrated@etc-dehydrated-config.timer
+    state: started
+    enabled: yes
+  when: rdmo_conf_overrides.global.run_dehydrated == True
+
+- name: Reload nginx to load Let's Encrypt certificate
+  systemd:
+    name: nginx
+    state: reloaded
+  when: rdmo_conf_overrides.global.run_dehydrated == True

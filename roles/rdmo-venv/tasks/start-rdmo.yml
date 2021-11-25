@@ -1,0 +1,10 @@
+---
+- name: systemd daemon-reload
+  systemd:
+    daemon_reload: yes
+
+- name: Make sure rdmo.service is started
+  systemd:
+    name: "{{ rdmo_user }}.service"
+    state: started
+    enabled: yes
