@@ -50,5 +50,4 @@
     app_path: "{{ rdmo_app_dir }}"
     virtualenv: "{{ rdmo_env_dir }}"
   ignore_errors: True
-  when: superuser_missing | bool
-
+  when: superuser_missing.stdout | bool
