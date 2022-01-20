@@ -6,5 +6,5 @@
 - name: Make sure rdmo.service is started
   systemd:
     name: "{{ rdmo_user }}.service"
-    state: started
+    state: restarted
     enabled: yes
