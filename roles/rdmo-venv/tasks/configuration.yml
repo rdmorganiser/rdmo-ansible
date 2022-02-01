@@ -1,21 +1,11 @@
 ---
-- name: Copy RDMO config
+- name: Create RDMO config
   become: yes
   become_user: "{{ rdmo_user }}"
   template:
     src: sample.local.py
     dest: "{{ rdmo_conf_dir }}/local.py"
     mode: '0600'
-  when: rdmo_conf_overrides.global.local_py_template == True
-
-- name: Copy RDMO config
-  become: yes
-  become_user: "{{ rdmo_user }}"
-  copy:
-    src: local.py
-    dest: "{{ rdmo_conf_dir }}/local.py"
-    mode: '0600'
-  when: rdmo_conf_overrides.global.local_py_template == False
 
 - name: Copy RDMO systemd unit files
   template:

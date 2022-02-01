@@ -4,7 +4,6 @@ rdmo_conf_overrides:
 # RDMO installation specific 
 
      catalog_import:
-     local_py_template:
      rdmo_postgres_password:
      rdmo_user:
      #rdmo_secret_key: # Not needed
