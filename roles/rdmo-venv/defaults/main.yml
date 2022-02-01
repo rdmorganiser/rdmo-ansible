@@ -1,5 +1,4 @@
 ---
-catalog_import: "{{ rdmo_conf_overrides.global.catalog_import | default(True) }}"
 rdmo_user: "{{ rdmo_conf_overrides.global.rdmo_user }}"
 rdmo_hostnames: "{{ rdmo_conf_overrides.global.rdmo_hostnames }}"
 rdmo_canonical_hostname: "{{ rdmo_conf_overrides.global.rdmo_hostnames | first }}"

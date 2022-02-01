@@ -70,7 +70,3 @@
     virtualenv: "{{ rdmo_env_dir }}"
   when: testuser_missing | bool
 
-- name: Import RDMO catalogs
-  include_tasks: import-catalogs.yml
-  when: catalog_import == True
-
