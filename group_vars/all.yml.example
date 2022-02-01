@@ -3,12 +3,12 @@ rdmo_conf_overrides:
      
 # RDMO installation specific 
 
-     rdmo_user:
+     rdmo_user: "example_system_user"
      #rdmo_secret_key: # Not needed
      rdmo_hostnames: # The first list entry is the canonical hostname to which all other hostnames will redirect
        - "rdmo.example.net"
        - "www.rdmo.example.net"
-     rdmo_superuser_email:
+     rdmo_superuser_email: "example_system_user@localhost"
      #rdmo_mail_server: "localhost"
      #rdmo_mail_port: 587
      #rdmo_mail_disable_ssl: True #fixme, see https://docs.djangoproject.com/en/2.2/ref/settings/#email-use-ssl
