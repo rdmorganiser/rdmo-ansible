@@ -17,7 +17,6 @@ rdmo_mail_user: "{{ rdmo_conf_overrides.global.rdmo_mail_user | default(none) }}
 rdmo_mail_pass: "{{ rdmo_conf_overrides.global.rdmo_mail_pass | default(none) }}"
 rdmo_mail_address: "{{ rdmo_conf_overrides.global.rdmo_mail_address | default(rdmo_user + '@' + rdmo_canonical_hostname) }}"
 #rdmo_postgres_password: "{{ lookup('password', 'credentials/' + client + '/' + tier + '/' + role + '/postgres_password length=15') }}"
-#rdmo_postgres_password: "supersicherespasswort"
 rdmo_postgres_password: "{{ rdmo_conf_overrides.global.rdmo_postgres_password }}"
 postgres_server: "{{ rdmo_conf_overrides.global.postgres_server | default('localhost') }}"
 postgres_port: "{{ rdmo_conf_overrides.global.postgres_port | default(none) }}"

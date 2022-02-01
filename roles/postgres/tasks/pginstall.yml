@@ -8,24 +8,15 @@
     name: ['postgresql-common', 'python3-psycopg2']
     state: latest
 
-- name: Check if existing PostgreSQL password for RDMO user is available
-  stat:
-    path: "{{ rdmo_home }}/.pgpass"
-    follow: yes
-  register: pgpass_stat_result
-
 - name: Read (slurp) existing ~/.pgpass for RDMO user if available
-  slurp:
+  ansible.builtin.slurp:
     src: "{{ rdmo_home }}/.pgpass"
   register: pgpass_content_b64encoded
-  when: (rdmo_postgres_password is not defined) and pgpass_stat_result.stat.exists and pgpass_stat_result.stat.isreg and  pgpass_stat_result.stat.readable
+  ignore_errors: yes
 
-- name: Parse RDMO PostgreSQL password from ~/.pgpass contents
+- name: Set ansible fact with PostgreSQL rdmo user password
   set_fact:
-    #pgpass: "{{ pgpass_content_b64encoded.content | b64decode | regex_search('^({{ postgres_server }}):({{ postgres_port }}):({{ rdmo_postgres_user }}):({{ rdmo_postgres_user }}):(.*)$', '\\5') }}"
-    #pgpass: "{{ pgpass_content_b64encoded.content | b64decode | regex_search('^(localhost):():(rdmo):(rdmo):(.*)$', '\\5') }}"
-    rdmo_postgres_password: "{{ pgpass_content_b64encoded.content | b64decode | regex_search('^(' + postgres_server + '):(' + postgres_port + '):(' + rdmo_postgres_user + '):(' + rdmo_postgres_user + '):(.*)$' | string, '\\5') }}"
-  when: (rdmo_postgres_password is not defined) and (pgpass_content_b64encoded is defined)
+    rdmo_postgres_password: "{{ pgpass_content_b64encoded['content'] | default('') | b64decode | regex_findall('localhost::' + rdmo_user + ':' + rdmo_user + ':(.+)') | first | default(lookup('password', '/dev/null chars=ascii_lowercase,ascii_uppercase,digits length=8 length=64')) }}"
 
 - name: "Debug: show postgres password"
   debug:
