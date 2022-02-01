@@ -42,9 +42,20 @@
   shell: echo "from django.contrib.auth import get_user_model; User = get_user_model(); print(User.objects.filter(username='admin').count()==0)" | "{{ rdmo_env_dir }}/bin/python" "{{ rdmo_app_dir }}/manage.py" shell
   register: superuser_missing
 
+- name: Read or generate RDMO/Django superuser password
+  set_fact:
+    rdmo_superuser_password: "{{ lookup('password', 'credentials/{{ rdmo_hostnames[0] }}_superuser_password.txt chars=ascii_lowercase,ascii_uppercase,digits length=8 length=64') }}"
+  when: (rdmo_superuser_password is not defined)
+
+- name: Debug print RDMO/Django superuser password
+  debug:
+    msg: "Debug: RDMO superuser password: {{ rdmo_superuser_password }}"
+
 - name: manage.py createsuperuser
   become: yes
   become_user: "{{ rdmo_user }}"
+  environment:
+    DJANGO_SUPERUSER_PASSWORD: "{{ rdmo_superuser_password  }}"
   django_manage:
     command: "createsuperuser --noinput --username=admin --email={{ rdmo_superuser_email }}"
     app_path: "{{ rdmo_app_dir }}"
