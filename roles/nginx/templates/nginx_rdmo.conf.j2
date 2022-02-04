@@ -37,7 +37,7 @@ server {
 	}
 	
 	location /static/ {
-		alias /srv/rdmo/rdmo-app/static_root/;
+		alias {{ rdmo_home }}/rdmo-app/static_root/;
 	}
 }
 
