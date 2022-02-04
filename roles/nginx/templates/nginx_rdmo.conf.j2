@@ -1,10 +1,12 @@
 #{{ ansible_managed }}
 server {
-	listen      [::]:80;
-	listen      80;
-	server_name {{ rdmo_hostnames | join(' ') }};
-	include     /etc/nginx/snippets/acme-challenges.conf;
-	return      302 https://{{ rdmo_canonical_hostname }}$request_uri;
+	listen        [::]:80;
+	listen        80;
+	server_name   {{ rdmo_hostnames | join(' ') }};
+	gzip          off;
+	server_tokens off;
+	include       /etc/nginx/snippets/acme-challenges.conf;
+	return        302 https://{{ rdmo_canonical_hostname }}$request_uri;
 }
 
 {% if (rdmo_alternative_hostnames | count) > 0 %}
@@ -15,6 +17,8 @@ server {
 	ssl_certificate	    /var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/fullchain.pem;
 	ssl_certificate_key /var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/privkey.pem;
 	ssl_stapling_file   /var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/ocsp.der;
+	gzip                off;
+	server_tokens       off;
 	include             /etc/nginx/snippets/acme-challenges.conf;
 	return              302 https://{{ rdmo_canonical_hostname }}$request_uri;
 }
@@ -27,7 +31,9 @@ server {
 	ssl_certificate	    /var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/fullchain.pem;
 	ssl_certificate_key /var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/privkey.pem;
 	ssl_stapling_file   /var/lib/dehydrated/certs/{{ rdmo_canonical_hostname }}/ocsp.der;
-	include /etc/nginx/snippets/acme-challenges.conf;
+	gzip                off;
+	server_tokens       off;
+	include             /etc/nginx/snippets/acme-challenges.conf;
 	
 	location / {
 		proxy_set_header Host $http_host;

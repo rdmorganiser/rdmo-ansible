@@ -19,15 +19,6 @@
   systemd:
     daemon_reload: yes
 
-- name: Copy /etc/nginx/nginx.conf to RDMO host
-  copy:
-    src: nginx.conf
-    dest: /etc/nginx/nginx.conf
-    owner: root
-    group: root
-    mode: '0644'
-  when: rdmo_conf_overrides.global.overwrite_nginx_conf == True
-
 - name: Make sure nginx configuration subdirectories exist
   file:
     path: "/etc/nginx/{{ item }}"
@@ -39,7 +30,6 @@
     - sites-available
     - sites-enabled
     - snippets
-  when: rdmo_conf_overrides.global.overwrite_nginx_conf == True
 
 - name: Create "dehydrated" group
   group:
@@ -75,20 +65,17 @@
     owner: root
     group: root
     mode: '0644'
-  when: rdmo_conf_overrides.global.overwrite_nginx_conf == True
 
 - name: Copy nginx vhost config for our RDMO instance
   template:
      src: nginx_rdmo.conf.j2
      dest: "/etc/nginx/sites-available/{{ rdmo_user }}.conf"
-  when: rdmo_conf_overrides.global.overwrite_nginx_conf == True
 
 - name: Enable nginx vhost config for our RDMO instance
   file:
     src: "/etc/nginx/sites-available/{{ rdmo_user }}.conf"
     dest: "/etc/nginx/sites-enabled/{{ rdmo_user }}.conf"
     state: link
-  when: rdmo_conf_overrides.global.overwrite_nginx_conf == True
 
 - name: Recursively chown /etc/dehydrated to root user
   file:

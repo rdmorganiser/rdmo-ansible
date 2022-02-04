@@ -8,6 +8,5 @@
     - rdmo_superuser_email
     - installation_method
     - pg_backup_path
-    - overwrite_nginx_conf
     - run_dehydrated
     - testsuite_deps

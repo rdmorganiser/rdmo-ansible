@@ -18,7 +18,6 @@ rdmo_conf_overrides:
      #rdmo_mail_address: "changeme_email@localhost"
      installation_method:
      pg_backup_path:
-     overwrite_nginx_conf: # This needs to be set to "True", *but* you need to manually backup your existing nginx config beforehand.
      run_dehydrated: False
      testsuite_deps: False
 
