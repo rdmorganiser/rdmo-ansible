@@ -4,7 +4,6 @@
     that:
       - '{{ item }} != ""'
   with_items:
-    - rdmo_postgres_password
     - rdmo_user
     - rdmo_superuser_email
     - installation_method

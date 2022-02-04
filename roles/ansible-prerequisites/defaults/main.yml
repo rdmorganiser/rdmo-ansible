@@ -1,5 +1,4 @@
 ---
-rdmo_postgres_password: "{{ rdmo_conf_overrides.global.rdmo_postgres_password }}"
 rdmo_user: "{{ rdmo_conf_overrides.global.rdmo_user }}"
 rdmo_secret_key: "{{ rdmo_conf_overrides.global.rdmo_secret_key }}"
 rdmo_superuser_email: "{{ rdmo_conf_overrides.global.rdmo_superuser_email }}"
